@@ -27,7 +27,7 @@ export function AppSidebar({
         <Sidebar collapsible="icon" className="overflow-hidden">
           <SidebarHeader className="flex-row">
             <SidebarTrigger />
-            <span className="text-xl text-nowrap">WDS Jobs</span>
+            <span className="text-xl text-nowrap font-bold">JobKonnect</span>
           </SidebarHeader>
           <SidebarContent>{content}</SidebarContent>
           <SignedIn>

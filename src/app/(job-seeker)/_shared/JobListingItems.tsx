@@ -1,38 +1,38 @@
-import { Avatar, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { db } from "@/drizzle/db"
+} from "@/components/ui/card";
+import { db } from "@/drizzle/db";
 import {
   experienceLevels,
   JobListingTable,
   jobListingTypes,
   locationRequirements,
   OrganizationTable,
-} from "@/drizzle/schema"
-import { convertSearchParamsToString } from "@/lib/convertSearchParamsToString"
-import { cn } from "@/lib/utils"
-import { AvatarFallback } from "@radix-ui/react-avatar"
-import { and, desc, eq, ilike, or, SQL } from "drizzle-orm"
-import Link from "next/link"
-import { Suspense } from "react"
-import { differenceInDays } from "date-fns"
-import { connection } from "next/server"
-import { Badge } from "@/components/ui/badge"
-import { JobListingBadges } from "@/features/jobListings/components/JobListingBadges"
-import { optional, z } from "zod"
-import { cacheTag } from "next/dist/server/use-cache/cache-tag"
-import { getJobListingGlobalTag } from "@/features/jobListings/db/cache/jobListings"
-import { getOrganizationIdTag } from "@/features/organizations/db/cache/organizations"
+} from "@/drizzle/schema";
+import { cn } from "@/lib/utils";
+import { AvatarFallback } from "@radix-ui/react-avatar";
+import { and, desc, eq, ilike, or, SQL } from "drizzle-orm";
+import Link from "next/link";
+import { Suspense } from "react";
+import { differenceInDays } from "date-fns";
+import { connection } from "next/server";
+import { Badge } from "@/components/ui/badge";
+import { JobListingBadges } from "@/features/jobListings/components/JobListingBadges";
+import { optional, z } from "zod";
+import { cacheTag } from "next/dist/server/use-cache/cache-tag";
+import { getJobListingGlobalTag } from "@/features/jobListings/db/cache/jobListings";
+import { getOrganizationIdTag } from "@/features/organizations/db/cache/organizations";
+import { convertSearchParamsToString } from "@/lib/convertSearchParamsToString";
 
 type Props = {
-  searchParams: Promise<Record<string, string | string[]>>
-  params?: Promise<{ jobListingId: string }>
-}
+  searchParams: Promise<Record<string, string | string[]>>;
+  params?: Promise<{ jobListingId: string }>;
+};
 
 const searchParamsSchema = z.object({
   title: z.string().optional().catch(undefined),
@@ -43,34 +43,34 @@ const searchParamsSchema = z.object({
   type: z.enum(jobListingTypes).optional().catch(undefined),
   jobIds: z
     .union([z.string(), z.array(z.string())])
-    .transform(v => (Array.isArray(v) ? v : [v]))
+    .transform((v) => (Array.isArray(v) ? v : [v]))
     .optional()
     .catch([]),
-})
+});
 
 export function JobListingItems(props: Props) {
   return (
     <Suspense>
       <SuspendedComponent {...props} />
     </Suspense>
-  )
+  );
 }
 
 async function SuspendedComponent({ searchParams, params }: Props) {
-  const jobListingId = params ? (await params).jobListingId : undefined
-  const { success, data } = searchParamsSchema.safeParse(await searchParams)
-  const search = success ? data : {}
+  const jobListingId = params ? (await params).jobListingId : undefined;
+  const { success, data } = searchParamsSchema.safeParse(await searchParams);
+  const search = success ? data : {};
 
-  const jobListings = await getJobListings(search, jobListingId)
+  const jobListings = await getJobListings(search, jobListingId);
   if (jobListings.length === 0) {
     return (
       <div className="text-muted-foreground p-4">No job listings found</div>
-    )
+    );
   }
 
   return (
     <div className="space-y-4">
-      {jobListings.map(jobListing => (
+      {jobListings.map((jobListing) => (
         <Link
           className="block"
           key={jobListing.id}
@@ -85,7 +85,7 @@ async function SuspendedComponent({ searchParams, params }: Props) {
         </Link>
       ))}
     </div>
-  )
+  );
 }
 
 function JobListingListItem({
@@ -104,14 +104,17 @@ function JobListingListItem({
     | "postedAt"
     | "locationRequirement"
     | "isFeatured"
-  >
-  organization: Pick<typeof OrganizationTable.$inferSelect, "name" | "imageUrl">
+  >;
+  organization: Pick<
+    typeof OrganizationTable.$inferSelect,
+    "name" | "imageUrl"
+  >;
 }) {
   const nameInitials = organization?.name
     .split(" ")
     .splice(0, 4)
-    .map(word => word[0])
-    .join("")
+    .map((word) => word[0])
+    .join("");
 
   return (
     <Card
@@ -160,67 +163,67 @@ function JobListingListItem({
         />
       </CardContent>
     </Card>
-  )
+  );
 }
 
 async function DaysSincePosting({ postedAt }: { postedAt: Date }) {
-  await connection()
-  const daysSincePosted = differenceInDays(postedAt, Date.now())
+  await connection();
+  const daysSincePosted = differenceInDays(postedAt, Date.now());
 
   if (daysSincePosted === 0) {
-    return <Badge>New</Badge>
+    return <Badge>New</Badge>;
   }
 
   return new Intl.RelativeTimeFormat(undefined, {
     style: "narrow",
     numeric: "always",
-  }).format(daysSincePosted, "days")
+  }).format(daysSincePosted, "days");
 }
 
 async function getJobListings(
   searchParams: z.infer<typeof searchParamsSchema>,
   jobListingId: string | undefined
 ) {
-  "use cache"
-  cacheTag(getJobListingGlobalTag())
+  "use cache";
+  cacheTag(getJobListingGlobalTag());
 
-  const whereConditions: (SQL | undefined)[] = []
+  const whereConditions: (SQL | undefined)[] = [];
   if (searchParams.title) {
     whereConditions.push(
       ilike(JobListingTable.title, `%${searchParams.title}%`)
-    )
+    );
   }
 
   if (searchParams.locationRequirement) {
     whereConditions.push(
       eq(JobListingTable.locationRequirement, searchParams.locationRequirement)
-    )
+    );
   }
 
   if (searchParams.city) {
-    whereConditions.push(ilike(JobListingTable.city, `%${searchParams.city}%`))
+    whereConditions.push(ilike(JobListingTable.city, `%${searchParams.city}%`));
   }
 
   if (searchParams.state) {
     whereConditions.push(
       eq(JobListingTable.stateAbbreviation, searchParams.state)
-    )
+    );
   }
 
   if (searchParams.experience) {
     whereConditions.push(
       eq(JobListingTable.experienceLevel, searchParams.experience)
-    )
+    );
   }
 
   if (searchParams.type) {
-    whereConditions.push(eq(JobListingTable.type, searchParams.type))
+    whereConditions.push(eq(JobListingTable.type, searchParams.type));
   }
 
   if (searchParams.jobIds) {
     whereConditions.push(
-      or(...searchParams.jobIds.map(jobId => eq(JobListingTable.id, jobId)))
-    )
+      or(...searchParams.jobIds.map((jobId) => eq(JobListingTable.id, jobId)))
+    );
   }
 
   const data = await db.query.JobListingTable.findMany({
@@ -243,11 +246,11 @@ async function getJobListings(
       },
     },
     orderBy: [desc(JobListingTable.isFeatured), desc(JobListingTable.postedAt)],
-  })
+  });
 
-  data.forEach(listing => {
-    cacheTag(getOrganizationIdTag(listing.organization.id))
-  })
+  data.forEach((listing) => {
+    cacheTag(getOrganizationIdTag(listing.organization.id));
+  });
 
-  return data
+  return data;
 }
