@@ -1,6 +1,6 @@
-import { AsyncIf } from "@/components/AsyncIf"
-import { AppSidebar } from "@/components/sidebar/AppSidebar"
-import { SidebarNavMenuGroup } from "@/components/sidebar/SidebarNavMenuGroup"
+import { AsyncIf } from "@/components/AsyncIf";
+import { AppSidebar } from "@/components/sidebar/AppSidebar";
+import { SidebarNavMenuGroup } from "@/components/sidebar/SidebarNavMenuGroup";
 import {
   SidebarGroup,
   SidebarGroupAction,
@@ -9,38 +9,38 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import { db } from "@/drizzle/db"
+} from "@/components/ui/sidebar";
+import { db } from "@/drizzle/db";
 import {
   JobListingApplicationTable,
   JobListingStatus,
   JobListingTable,
-} from "@/drizzle/schema"
-import { getJobListingApplicationJobListingTag } from "@/features/jobListingApplications/db/cache/jobListingApplications"
-import { getJobListingOrganizationTag } from "@/features/jobListings/db/cache/jobListings"
-import { sortJobListingsByStatus } from "@/features/jobListings/lib/utils"
-import { SidebarOrganizationButton } from "@/features/organizations/components/SidebarOrganizationButton"
-import { getCurrentOrganization } from "@/services/clerk/lib/getCurrentAuth"
-import { hasOrgUserPermission } from "@/services/clerk/lib/orgUserPermissions"
-import { count, desc, eq } from "drizzle-orm"
-import { ClipboardListIcon, PlusIcon } from "lucide-react"
-import { cacheTag } from "next/dist/server/use-cache/cache-tag"
-import Link from "next/link"
-import { redirect } from "next/navigation"
-import { ReactNode, Suspense } from "react"
-import { JobListingMenuGroup } from "./_JobListingMenugroup"
+} from "@/drizzle/schema";
+import { getJobListingApplicationJobListingTag } from "@/features/jobListingApplications/db/cache/jobListingApplications";
+import { getJobListingOrganizationTag } from "@/features/jobListings/db/cache/jobListings";
+import { sortJobListingsByStatus } from "@/features/jobListings/lib/utils";
+import { SidebarOrganizationButton } from "@/features/organizations/components/SidebarOrganizationButton";
+import { getCurrentOrganization } from "@/services/clerk/lib/getCurrentAuth";
+import { hasOrgUserPermission } from "@/services/clerk/lib/orgUserPermissions";
+import { count, desc, eq } from "drizzle-orm";
+import { ClipboardListIcon, PlusIcon } from "lucide-react";
+import { cacheTag } from "next/dist/server/use-cache/cache-tag";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { ReactNode, Suspense } from "react";
+import { JobListingMenuGroup } from "./_JobListingMenugroup";
 
 export default function EmployerLayout({ children }: { children: ReactNode }) {
   return (
     <Suspense>
       <LayoutSuspense>{children}</LayoutSuspense>
     </Suspense>
-  )
+  );
 }
 
 async function LayoutSuspense({ children }: { children: ReactNode }) {
-  const { orgId } = await getCurrentOrganization()
-  if (orgId == null) return redirect("/organizations/select")
+  const { orgId } = await getCurrentOrganization();
+  if (orgId == null) return redirect("/organizations/select");
 
   return (
     <AppSidebar
@@ -75,11 +75,11 @@ async function LayoutSuspense({ children }: { children: ReactNode }) {
     >
       {children}
     </AppSidebar>
-  )
+  );
 }
 
 async function JobListingMenu({ orgId }: { orgId: string }) {
-  const jobListings = await getJobListings(orgId)
+  const jobListings = await getJobListings(orgId);
 
   if (
     jobListings.length === 0 &&
@@ -96,15 +96,15 @@ async function JobListingMenu({ orgId }: { orgId: string }) {
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>
-    )
+    );
   }
 
-  return Object.entries(Object.groupBy(jobListings, j => j.status))
+  return Object.entries(Object.groupBy(jobListings, (j) => j.status))
     .sort(([a], [b]) => {
       return sortJobListingsByStatus(
         a as JobListingStatus,
         b as JobListingStatus
-      )
+      );
     })
     .map(([status, jobListings]) => (
       <JobListingMenuGroup
@@ -112,12 +112,12 @@ async function JobListingMenu({ orgId }: { orgId: string }) {
         status={status as JobListingStatus}
         jobListings={jobListings}
       />
-    ))
+    ));
 }
 
 async function getJobListings(orgId: string) {
-  "use cache"
-  cacheTag(getJobListingOrganizationTag(orgId))
+  "use cache";
+  cacheTag(getJobListingOrganizationTag(orgId));
 
   const data = await db
     .select({
@@ -133,11 +133,11 @@ async function getJobListings(orgId: string) {
       eq(JobListingTable.id, JobListingApplicationTable.jobListingId)
     )
     .groupBy(JobListingApplicationTable.jobListingId, JobListingTable.id)
-    .orderBy(desc(JobListingTable.createdAt))
+    .orderBy(desc(JobListingTable.createdAt));
 
-  data.forEach(jobListing => {
-    cacheTag(getJobListingApplicationJobListingTag(jobListing.id))
-  })
+  data.forEach((jobListing) => {
+    cacheTag(getJobListingApplicationJobListingTag(jobListing.id));
+  });
 
-  return data
+  return data;
 }
