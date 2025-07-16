@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { jobListingSchema } from "../actions/schemas"
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { jobListingSchema } from "../actions/schemas";
 import {
   Form,
   FormControl,
@@ -11,16 +11,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { z } from "zod"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/form";
+import { z } from "zod";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import {
   experienceLevels,
   JobListingTable,
@@ -28,22 +28,22 @@ import {
   locationRequirementEnum,
   locationRequirements,
   wageIntervals,
-} from "@/drizzle/schema"
+} from "@/drizzle/schema";
 import {
   formatExperienceLevel,
   formatJobType,
   formatLocationRequirement,
   formatWageInterval,
-} from "../lib/formatters"
-import { StateSelectItems } from "./StateSelectItems"
-import { MarkdownEditor } from "@/components/markdown/MarkdownEditor"
-import { Button } from "@/components/ui/button"
-import { LoadingSwap } from "@/components/LoadingSwap"
-import { Loader2Icon } from "lucide-react"
-import { createJobListing, updateJobListing } from "../actions/actions"
-import { toast } from "sonner"
+} from "../lib/formatters";
+import { StateSelectItems } from "./StateSelectItems";
+import { MarkdownEditor } from "@/components/markdown/MarkdownEditor";
+import { Button } from "@/components/ui/button";
+import { LoadingSwap } from "@/components/LoadingSwap";
+import { Loader2Icon } from "lucide-react";
+import { createJobListing, updateJobListing } from "../actions/actions";
+import { toast } from "sonner";
 
-const NONE_SELECT_VALUE = "none"
+const NONE_SELECT_VALUE = "none";
 
 export function JobListingForm({
   jobListing,
@@ -60,7 +60,7 @@ export function JobListingForm({
     | "wageInterval"
     | "city"
     | "locationRequirement"
-  >
+  >;
 }) {
   const form = useForm({
     resolver: zodResolver(jobListingSchema),
@@ -75,16 +75,16 @@ export function JobListingForm({
       type: "full-time",
       locationRequirement: "in-office",
     },
-  })
+  });
 
   async function onSubmit(data: z.infer<typeof jobListingSchema>) {
     const action = jobListing
       ? updateJobListing.bind(null, jobListing.id)
-      : createJobListing
-    const res = await action(data)
+      : createJobListing;
+    const res = await action(data);
 
     if (res.error) {
-      toast.error(res.message)
+      toast.error(res.message);
     }
   }
 
@@ -121,7 +121,7 @@ export function JobListingForm({
                       type="number"
                       value={field.value ?? ""}
                       className="rounded-r-none"
-                      onChange={e =>
+                      onChange={(e) =>
                         field.onChange(
                           isNaN(e.target.valueAsNumber)
                             ? null
@@ -137,7 +137,7 @@ export function JobListingForm({
                       <FormItem>
                         <Select
                           value={field.value ?? ""}
-                          onValueChange={val => field.onChange(val ?? null)}
+                          onValueChange={(val) => field.onChange(val ?? null)}
                         >
                           <FormControl>
                             <SelectTrigger className="rounded-l-none">
@@ -145,7 +145,7 @@ export function JobListingForm({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {wageIntervals.map(interval => (
+                            {wageIntervals.map((interval) => (
                               <SelectItem key={interval} value={interval}>
                                 {formatWageInterval(interval)}
                               </SelectItem>
@@ -185,7 +185,7 @@ export function JobListingForm({
                   <FormLabel>State</FormLabel>
                   <Select
                     value={field.value ?? ""}
-                    onValueChange={val =>
+                    onValueChange={(val) =>
                       field.onChange(val === NONE_SELECT_VALUE ? null : val)
                     }
                   >
@@ -224,7 +224,7 @@ export function JobListingForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {locationRequirements.map(lr => (
+                    {locationRequirements.map((lr) => (
                       <SelectItem key={lr} value={lr}>
                         {formatLocationRequirement(lr)}
                       </SelectItem>
@@ -249,7 +249,7 @@ export function JobListingForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {jobListingTypes.map(type => (
+                    {jobListingTypes.map((type) => (
                       <SelectItem key={type} value={type}>
                         {formatJobType(type)}
                       </SelectItem>
@@ -273,7 +273,7 @@ export function JobListingForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {experienceLevels.map(experience => (
+                    {experienceLevels.map((experience) => (
                       <SelectItem key={experience} value={experience}>
                         {formatExperienceLevel(experience)}
                       </SelectItem>
@@ -309,5 +309,5 @@ export function JobListingForm({
         </Button>
       </form>
     </Form>
-  )
+  );
 }

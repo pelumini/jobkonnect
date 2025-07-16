@@ -1,18 +1,18 @@
-import { db } from "@/drizzle/db"
-import { inngest } from "../client"
-import { and, eq } from "drizzle-orm"
+import { db } from "@/drizzle/db";
+import { inngest } from "../client";
+import { and, eq } from "drizzle-orm";
 import {
   JobListingApplicationTable,
   JobListingTable,
   UserResumeTable,
-} from "@/drizzle/schema"
-import { applicantRankingAgent } from "../ai/applicantRankingAgent"
+} from "@/drizzle/schema";
+import { applicantRankingAgent } from "../ai/applicantRankingAgent";
 
 export const rankApplication = inngest.createFunction(
   { id: "rank-applicant", name: "Rank Applicant" },
   { event: "app/jobListingApplication.created" },
   async ({ step, event }) => {
-    const { userId, jobListingId } = event.data
+    const { userId, jobListingId } = event.data;
 
     const getCoverLetter = step.run("get-cover-letter", async () => {
       const application = await db.query.JobListingApplicationTable.findFirst({
@@ -21,19 +21,19 @@ export const rankApplication = inngest.createFunction(
           eq(JobListingApplicationTable.jobListingId, jobListingId)
         ),
         columns: { coverLetter: true },
-      })
+      });
 
-      return application?.coverLetter
-    })
+      return application?.coverLetter;
+    });
 
     const getResume = step.run("get-resume", async () => {
       const resume = await db.query.UserResumeTable.findFirst({
         where: eq(UserResumeTable.userId, userId),
         columns: { aiSummary: true },
-      })
+      });
 
-      return resume?.aiSummary
-    })
+      return resume?.aiSummary;
+    });
 
     const getJobListing = step.run("get-job-listing", async () => {
       return await db.query.JobListingTable.findFirst({
@@ -50,19 +50,19 @@ export const rankApplication = inngest.createFunction(
           wageInterval: true,
           type: true,
         },
-      })
-    })
+      });
+    });
 
     const [coverLetter, resumeSummary, jobListing] = await Promise.all([
       getCoverLetter,
       getResume,
       getJobListing,
-    ])
+    ]);
 
-    if (resumeSummary == null || jobListing == null) return
+    if (resumeSummary == null || jobListing == null) return;
 
     await applicantRankingAgent.run(
       JSON.stringify({ coverLetter, resumeSummary, jobListingId, userId })
-    )
+    );
   }
-)
+);
