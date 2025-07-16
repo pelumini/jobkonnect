@@ -1,19 +1,19 @@
-import { db } from "@/drizzle/db"
-import { inngest } from "../client"
-import { and, eq, gte } from "drizzle-orm"
+import { db } from "@/drizzle/db";
+import { inngest } from "../client";
+import { and, eq, gte } from "drizzle-orm";
 import {
   JobListingApplicationTable,
   JobListingTable,
   OrganizationUserSettingsTable,
   UserNotificationSettingsTable,
-} from "@/drizzle/schema"
-import { subDays } from "date-fns"
-import { GetEvents } from "inngest"
-import { getMatchingJobListings } from "../ai/getMatchingJobListings"
-import { resend } from "@/services/resend/client"
-import DailyJobListingEmail from "@/services/resend/components/DailyJobListingEmail"
-import { env } from "@/data/env/server"
-import DailyApplicationEmail from "@/services/resend/components/DailyApplicationEmail"
+} from "@/drizzle/schema";
+import { subDays } from "date-fns";
+import { GetEvents } from "inngest";
+import { getMatchingJobListings } from "../ai/getMatchingJobListings";
+import { resend } from "@/services/resend/client";
+import DailyJobListingEmail from "@/services/resend/components/DailyJobListingEmail";
+import { env } from "@/data/env/server";
+import DailyApplicationEmail from "@/services/resend/components/DailyApplicationEmail";
 
 export const prepareDailyUserJobListingNotifications = inngest.createFunction(
   {
@@ -40,8 +40,8 @@ export const prepareDailyUserJobListingNotifications = inngest.createFunction(
             },
           },
         },
-      })
-    })
+      });
+    });
 
     const getJobListings = step.run("get-recent-job-listings", async () => {
       return await db.query.JobListingTable.findMany({
@@ -64,17 +64,17 @@ export const prepareDailyUserJobListingNotifications = inngest.createFunction(
             columns: { name: true },
           },
         },
-      })
-    })
+      });
+    });
 
     const [userNotifications, jobListings] = await Promise.all([
       getUsers,
       getJobListings,
-    ])
+    ]);
 
-    if (jobListings.length === 0 || userNotifications.length === 0) return
+    if (jobListings.length === 0 || userNotifications.length === 0) return;
 
-    const events = userNotifications.map(notification => {
+    const events = userNotifications.map((notification) => {
       return {
         name: "app/email.daily-user-job-listings",
         user: {
@@ -83,21 +83,21 @@ export const prepareDailyUserJobListingNotifications = inngest.createFunction(
         },
         data: {
           aiPrompt: notification.aiPrompt ?? undefined,
-          jobListings: jobListings.map(listing => {
+          jobListings: jobListings.map((listing) => {
             return {
               ...listing,
               organizationName: listing.organization.name,
-            }
+            };
           }),
         },
       } as const satisfies GetEvents<
         typeof inngest
-      >["app/email.daily-user-job-listings"]
-    })
+      >["app/email.daily-user-job-listings"];
+    });
 
-    await step.sendEvent("send-emails", events)
+    await step.sendEvent("send-emails", events);
   }
-)
+);
 
 export const sendDailyUserJobListingEmail = inngest.createFunction(
   {
@@ -110,22 +110,22 @@ export const sendDailyUserJobListingEmail = inngest.createFunction(
   },
   { event: "app/email.daily-user-job-listings" },
   async ({ event, step }) => {
-    const { jobListings, aiPrompt } = event.data
-    const user = event.user
+    const { jobListings, aiPrompt } = event.data;
+    const user = event.user;
 
-    if (jobListings.length === 0) return
+    if (jobListings.length === 0) return;
 
-    let matchingJobListings: typeof jobListings = []
+    let matchingJobListings: typeof jobListings = [];
     if (aiPrompt == null || aiPrompt.trim() === "") {
-      matchingJobListings = jobListings
+      matchingJobListings = jobListings;
     } else {
-      const matchingIds = await getMatchingJobListings(aiPrompt, jobListings)
-      matchingJobListings = jobListings.filter(listing =>
+      const matchingIds = await getMatchingJobListings(aiPrompt, jobListings);
+      matchingJobListings = jobListings.filter((listing) =>
         matchingIds.includes(listing.id)
-      )
+      );
     }
 
-    if (matchingJobListings.length === 0) return
+    if (matchingJobListings.length === 0) return;
 
     await step.run("send-email", async () => {
       await resend.emails.send({
@@ -137,10 +137,10 @@ export const sendDailyUserJobListingEmail = inngest.createFunction(
           userName: user.name,
           serverUrl: env.SERVER_URL,
         }),
-      })
-    })
+      });
+    });
   }
-)
+);
 
 export const prepareDailyOrganizationUserApplicationNotifications =
   inngest.createFunction(
@@ -170,8 +170,8 @@ export const prepareDailyOrganizationUserApplicationNotifications =
               },
             },
           },
-        })
-      })
+        });
+      });
 
       const getApplications = step.run("get-recent-applications", async () => {
         return await db.query.JobListingApplicationTable.findMany({
@@ -205,46 +205,46 @@ export const prepareDailyOrganizationUserApplicationNotifications =
               },
             },
           },
-        })
-      })
+        });
+      });
 
       const [userNotifications, applications] = await Promise.all([
         getUsers,
         getApplications,
-      ])
+      ]);
 
-      if (applications.length === 0 || userNotifications.length === 0) return
+      if (applications.length === 0 || userNotifications.length === 0) return;
 
       const groupedNotifications = Object.groupBy(
         userNotifications,
-        n => n.userId
-      )
+        (n) => n.userId
+      );
 
       const events = Object.entries(groupedNotifications)
         .map(([, settings]) => {
-          if (settings == null || settings.length === 0) return null
-          const userName = settings[0].user.name
-          const userEmail = settings[0].user.email
+          if (settings == null || settings.length === 0) return null;
+          const userName = settings[0].user.name;
+          const userEmail = settings[0].user.email;
 
           const filteredApplications = applications
-            .filter(a => {
+            .filter((a) => {
               return settings.find(
-                s =>
+                (s) =>
                   s.organizationId === a.jobListing.organization.id &&
                   (s.minimumRating == null ||
                     (a.rating ?? 0) >= s.minimumRating)
-              )
+              );
             })
-            .map(a => ({
+            .map((a) => ({
               organizationId: a.jobListing.organization.id,
               organizationName: a.jobListing.organization.name,
               jobListingId: a.jobListing.id,
               jobListingTitle: a.jobListing.title,
               userName: a.user.name,
               rating: a.rating,
-            }))
+            }));
 
-          if (filteredApplications.length === 0) return null
+          if (filteredApplications.length === 0) return null;
 
           return {
             name: "app/email.daily-organization-user-applications",
@@ -255,13 +255,13 @@ export const prepareDailyOrganizationUserApplicationNotifications =
             data: { applications: filteredApplications },
           } as const satisfies GetEvents<
             typeof inngest
-          >["app/email.daily-organization-user-applications"]
+          >["app/email.daily-organization-user-applications"];
         })
-        .filter(v => v != null)
+        .filter((v) => v != null);
 
-      await step.sendEvent("send-emails", events)
+      await step.sendEvent("send-emails", events);
     }
-  )
+  );
 
 export const sendDailyOrganizationUserApplicationEmail = inngest.createFunction(
   {
@@ -274,9 +274,9 @@ export const sendDailyOrganizationUserApplicationEmail = inngest.createFunction(
   },
   { event: "app/email.daily-organization-user-applications" },
   async ({ event, step }) => {
-    const { applications } = event.data
-    const user = event.user
-    if (applications.length === 0) return
+    const { applications } = event.data;
+    const user = event.user;
+    if (applications.length === 0) return;
 
     await step.run("send-email", async () => {
       await resend.emails.send({
@@ -287,7 +287,7 @@ export const sendDailyOrganizationUserApplicationEmail = inngest.createFunction(
           applications,
           userName: user.name,
         }),
-      })
-    })
+      });
+    });
   }
-)
+);
