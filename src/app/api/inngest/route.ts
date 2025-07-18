@@ -34,7 +34,7 @@ export const { GET, POST, PUT } = serve({
     rankApplication,
     prepareDailyUserJobListingNotifications,
     sendDailyUserJobListingEmail,
-    // prepareDailyOrganizationUserApplicationNotifications,
-    // sendDailyOrganizationUserApplicationEmail,
+    prepareDailyOrganizationUserApplicationNotifications,
+    sendDailyOrganizationUserApplicationEmail,
   ],
 });

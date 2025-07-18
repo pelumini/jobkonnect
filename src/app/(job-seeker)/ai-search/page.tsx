@@ -1,15 +1,15 @@
-import { AsyncIf } from "@/components/AsyncIf"
-import { LoadingSwap } from "@/components/LoadingSwap"
+import { AsyncIf } from "@/components/AsyncIf";
+import { LoadingSwap } from "@/components/LoadingSwap";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { JobListingAiSearchForm } from "@/features/jobListings/components/JobListingAiSearchForm"
-import { SignUpButton } from "@/services/clerk/components/AuthButtons"
-import { getCurrentUser } from "@/services/clerk/lib/getCurrentAuth"
+} from "@/components/ui/card";
+import { JobListingAiSearchForm } from "@/features/jobListings/components/JobListingAiSearchForm";
+import { SignUpButton } from "@/services/clerk/components/AuthButtons";
+import { getCurrentUser } from "@/services/clerk/lib/getCurrentAuth";
 
 export default function AiSearchPage() {
   return (
@@ -17,8 +17,8 @@ export default function AiSearchPage() {
       <Card className="max-w-4xl">
         <AsyncIf
           condition={async () => {
-            const { userId } = await getCurrentUser()
-            return userId != null
+            const { userId } = await getCurrentUser();
+            return userId != null;
           }}
           loadingFallback={
             <LoadingSwap isLoading>
@@ -31,7 +31,7 @@ export default function AiSearchPage() {
         </AsyncIf>
       </Card>
     </div>
-  )
+  );
 }
 
 function AiCard() {
@@ -47,7 +47,7 @@ function AiCard() {
         <JobListingAiSearchForm />
       </CardContent>
     </>
-  )
+  );
 }
 
 function NoPermission() {
@@ -59,5 +59,5 @@ function NoPermission() {
       </p>
       <SignUpButton />
     </CardContent>
-  )
+  );
 }

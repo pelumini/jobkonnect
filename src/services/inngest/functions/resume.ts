@@ -1,9 +1,9 @@
-import { db } from "@/drizzle/db"
-import { inngest } from "../client"
-import { eq } from "drizzle-orm"
-import { UserResumeTable } from "@/drizzle/schema"
-import { env } from "@/data/env/server"
-import { updateUserResume } from "@/features/users/db/userResumes"
+import { db } from "@/drizzle/db";
+import { inngest } from "../client";
+import { eq } from "drizzle-orm";
+import { UserResumeTable } from "@/drizzle/schema";
+import { env } from "@/data/env/server";
+import { updateUserResume } from "@/features/users/db/userResumes";
 
 export const createAiSummaryOfUploadedResume = inngest.createFunction(
   {
@@ -14,16 +14,16 @@ export const createAiSummaryOfUploadedResume = inngest.createFunction(
     event: "app/resume.uploaded",
   },
   async ({ step, event }) => {
-    const { id: userId } = event.user
+    const { id: userId } = event.user;
 
     const userResume = await step.run("get-user-resume", async () => {
       return await db.query.UserResumeTable.findFirst({
         where: eq(UserResumeTable.userId, userId),
         columns: { resumeFileUrl: true },
-      })
-    })
+      });
+    });
 
-    if (userResume == null) return
+    if (userResume == null) return;
 
     const result = await step.ai.infer("create-ai-summary", {
       model: step.ai.models.anthropic({
@@ -51,13 +51,13 @@ export const createAiSummaryOfUploadedResume = inngest.createFunction(
           },
         ],
       },
-    })
+    });
 
     await step.run("save-ai-summary", async () => {
-      const message = result.content[0]
-      if (message.type !== "text") return
+      const message = result.content[0];
+      if (message.type !== "text") return;
 
-      await updateUserResume(userId, { aiSummary: message.text })
-    })
+      await updateUserResume(userId, { aiSummary: message.text });
+    });
   }
-)
+);
